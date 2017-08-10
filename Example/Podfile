@@ -2,6 +2,7 @@ use_frameworks!
 
 target 'FYUploader_Example' do
   pod 'FYUploader', :path => '../'
+  pod 'ZLPhotoBrowser'
 
   target 'FYUploader_Tests' do
     inherit! :search_paths
