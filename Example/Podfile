@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'FYUploader_Example' do
+  pod 'FYUploader', :path => '../'
+
+  target 'FYUploader_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
