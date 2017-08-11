@@ -25,6 +25,18 @@
     return model;
 }
 
++ (instancetype)imageModelFromUrl:(NSString *)urlString{
+    FYImageModel *model = [FYImageModel new];
+    model.name = @"";
+    //save to local
+    if (urlString.length) {
+        model.urlString = urlString;
+    } else{
+        model = nil;
+    }
+    return model;
+}
+
 + (instancetype)imageModelWithCertainNameFromDocument:(NSString *) imageFilename{
     NSString *documentPath = [FYImageModel _imageDocumentPath];
     NSString *pathString = [documentPath stringByAppendingPathComponent:imageFilename];

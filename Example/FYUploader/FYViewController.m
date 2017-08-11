@@ -8,6 +8,7 @@
 @import ZLPhotoBrowser;
 #import "FYViewController.h"
 #import <FYUploader/FYImageUploader.h>
+#import <FYUploader/FYPhotoBrowseViewController.h>
 #import <Photos/Photos.h>
 
 @interface FYViewController ()<UITableViewDelegate ,UITableViewDataSource>
@@ -33,13 +34,8 @@ static NSString *CellID = @"CellID";
 }
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1. * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"标题" message:@"摇一摇，有惊喜" preferredStyle:UIAlertControllerStyleAlert];
-        [alertController addAction:[UIAlertAction actionWithTitle:@"ok" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-            
-        }]];
-        [self presentViewController:alertController animated:YES completion:nil];
-    });
+    
+    [FYImageModel clearAllImageModel];
 }
 
 - (void)viewDidLoad
@@ -47,7 +43,14 @@ static NSString *CellID = @"CellID";
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     [self.view addSubview:self.tableView];
-
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1. * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"标题" message:@"摇一摇，有惊喜" preferredStyle:UIAlertControllerStyleAlert];
+        [alertController addAction:[UIAlertAction actionWithTitle:@"ok" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
+            
+        }]];
+        [self presentViewController:alertController animated:YES completion:nil];
+    });
 }
 
 - (void)didReceiveMemoryWarning
@@ -92,20 +95,35 @@ static NSString *CellID = @"CellID";
                 NSString *name = [NSUUID UUID].UUIDString;
                 FYImageModel *imageModel = [FYImageModel imageModelWithUIImage:result
                                                                   andImageName:name];
+                imageModel.title = name;
                 if (imageModel) {
                     [models addObject:imageModel];
                 }
             }];
         }];
-        // begin upload
-        _uploader = [[FYImageUploader alloc] initWithImageModels:models];
-        [_uploader startWithCallBack:^(FYImageUploader *uploader) {
-            [uploader.uploadingImages enumerateObjectsUsingBlock:^(FYImageModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self.tableView reloadData];
-                });
-            }];
+        
+        NSArray<NSString *> *urls = @[@"http://ashit.qiniudn.com/nba_GS.png",
+                                      @"http://ashit.qiniudn.com/raptor.png"];
+        [urls enumerateObjectsUsingBlock:^(NSString * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            FYImageModel *urlImage = [FYImageModel imageModelFromUrl:obj];
+            urlImage.title = [NSString stringWithFormat:@"网图%ld",idx];
+            [models addObject:urlImage];
         }];
+        
+        FYPhotoBrowseViewController *browseVC = [FYPhotoBrowseViewController new];
+        [self presentViewController:browseVC animated:YES completion:^{
+            browseVC.imageModels = models;
+        }];
+        
+//        // begin upload
+//        _uploader = [[FYImageUploader alloc] initWithImageModels:models];
+//        [_uploader startWithCallBack:^(FYImageUploader *uploader) {
+//            [uploader.uploadingImages enumerateObjectsUsingBlock:^(FYImageModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+//                dispatch_async(dispatch_get_main_queue(), ^{
+//                    [self.tableView reloadData];
+//                });
+//            }];
+//        }];
     }];
     
     [actionSheet showPreviewAnimated:YES];

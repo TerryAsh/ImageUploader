@@ -11,10 +11,12 @@
 #import <UIKit/UIKit.h>
 
 @interface FYImageModel : NSObject
-    
-@property (nonatomic ,strong) NSString *name;
-@property (nonatomic ,readonly) NSString *localPath;
 
+@property (nonatomic ,strong) NSString *title;
+
+@property (nonatomic ,strong) NSString *name;
+@property (nonatomic ,strong) NSString *urlString;
+@property (nonatomic ,readonly) NSString *localPath;
 
 @property (nonatomic ,assign) double fractionCompleted;
 @property (nonatomic ,assign) BOOL isUploadingFinished;
@@ -29,6 +31,17 @@
   */
 + (instancetype)imageModelWithUIImage:(UIImage *) imageInMemory
                          andImageName:(NSString *) name;
+
+
+
+/**
+ 远程http url得到模型
+
+ @param urlString
+ @return nil，if url null
+ */
++ (instancetype)imageModelFromUrl:(NSString *)urlString;
+
 
 /*
  * 根据短文件名
