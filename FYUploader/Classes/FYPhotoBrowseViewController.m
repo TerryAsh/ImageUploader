@@ -135,11 +135,13 @@ static NSString *kBrowseCellID = @"BrowseCellID";
         _collectionView.center = self.view.center;
         _collectionView.pagingEnabled = YES;
         
+        
         [_collectionView registerClass:[UICollectionViewCell class]
             forCellWithReuseIdentifier:kBrowseCellID];
         _collectionView.delegate = self;
         _collectionView.dataSource = self;
         [self.view addSubview:_collectionView];
+        [self.view insertSubview:_collectionView belowSubview:self.pageTipLabel];
     }
     return _collectionView;
 }
@@ -152,6 +154,14 @@ static NSString *kBrowseCellID = @"BrowseCellID";
 
 - (void)handleFingerPinch:(UIPinchGestureRecognizer *)pincher
 {
+    if(UIGestureRecognizerStateEnded == pincher.state){
+        CGRect layerFrame= pincher.view.layer.frame;
+        
+        if (layerFrame.size.width < self.layout.itemSize.width
+            || layerFrame.size.height < self.layout.itemSize.height ) {
+            self.fingerPinch.view.transform = CGAffineTransformMakeScale(1., 1.);
+        }
+    }
     if([pincher numberOfTouches]<2){
         return;
     }
@@ -159,18 +169,7 @@ static NSString *kBrowseCellID = @"BrowseCellID";
     {
         self.centerPoint = [pincher locationInView:pincher.view];
         pincher.scale=1.0;
-    } else if(UIGestureRecognizerStateEnded == pincher.state){
-        CGRect layerFrame= pincher.view.layer.frame;
-
-        NSLog(@"%@",NSStringFromCGSize(pincher.view.layer.frame.size));
-        NSLog(@"%@",NSStringFromCGSize(self.layout.itemSize));
-
-        if (layerFrame.size.width < self.layout.itemSize.width
-            || layerFrame.size.height < self.layout.itemSize.height ) {
-            self.fingerPinch.view.transform = CGAffineTransformMakeScale(1., 1.);
-        }
     }
-    
     [pincher.view.layer setAffineTransform:CGAffineTransformScale(pincher.view.transform, pincher.scale, pincher.scale)];//change the scale of the transform in Layer.
     pincher.scale=1.0;
     

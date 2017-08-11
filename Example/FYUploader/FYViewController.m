@@ -6,6 +6,8 @@
 //  Copyright (c) 2017 Ash. All rights reserved.
 //
 @import ZLPhotoBrowser;
+@import SDWebImage;
+@import FrameAccessor;
 #import "FYViewController.h"
 #import <FYUploader/FYImageUploader.h>
 #import <FYUploader/FYPhotoBrowseViewController.h>
@@ -15,7 +17,7 @@
 
 @property (nonatomic ,strong) UITableView *tableView;
 @property (nonatomic ,strong) FYImageUploader *uploader;
-
+@property (nonatomic ,strong) UIImageView *imageView;
 @end
 
 @implementation FYViewController
@@ -27,23 +29,34 @@ static NSString *CellID = @"CellID";
                                                   style:UITableViewStylePlain];
         _tableView.delegate = self;
         _tableView.dataSource = self;
+        _tableView.contentInsetTop = self.imageView.height-  (self.navigationController ? 64 : 0);
         [_tableView registerClass:[UITableViewCell class]
            forCellReuseIdentifier:CellID];
     }
     return _tableView;
 }
+
+- (UIImageView *)imageView{
+    if (nil == _imageView) {
+        CGFloat width = self.view.width;
+        CGFloat height = width * (3 / 4.);
+        _imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, width, height)];
+        _imageView.backgroundColor = [UIColor redColor];
+       [_imageView sd_setImageWithURL:[NSURL URLWithString:@"http://ashit.qiniudn.com/c30605bd-72a9-4b48-a989-11ee405ff0f8.jpg_600x450.jpg"]];
+    }
+    return _imageView;
+}
+
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];
-    
     [FYImageModel clearAllImageModel];
 }
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad{
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
-    [self.view addSubview:self.tableView];
-    
+    [self _layoutViews];
+    return;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1. * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"标题" message:@"摇一摇，有惊喜" preferredStyle:UIAlertControllerStyleAlert];
         [alertController addAction:[UIAlertAction actionWithTitle:@"ok" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
@@ -53,10 +66,20 @@ static NSString *CellID = @"CellID";
     });
 }
 
+- (void)_layoutViews{
+    [self.view addSubview:self.tableView];
+
+    [self.view addSubview:self.imageView];
+}
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
+    return  3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
@@ -67,10 +90,38 @@ static NSString *CellID = @"CellID";
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellID
                                                             forIndexPath:indexPath];
     FYImageModel *img = self.uploader.uploadingImages[indexPath.row];
-    cell.imageView.image = [UIImage imageWithContentsOfFile:img.localPath];
+    if (img.localPath) {
+        cell.imageView.image = [UIImage imageWithContentsOfFile:img.localPath];
+    } else {
+        [cell.imageView sd_setImageWithURL:[NSURL URLWithString:img.urlString]];
+    }
     cell.textLabel.text = [NSString stringWithFormat:@"%.2lf%%",img.fractionCompleted * 100];
     return cell;
 }
+
+- (void)scrollViewDidScroll:(UIScrollView *)sender {
+    CGFloat offsetY =  sender.contentOffset.y;
+    CGFloat width = self.view.width;
+    CGFloat defaultHeight = width * (3 / 4.);
+    NSLog(@"%lf,%lf",offsetY,defaultHeight);
+    
+    
+    
+    
+    if (offsetY <= -defaultHeight) {
+        CGFloat offset = offsetY * -1.;
+        CGFloat finalHeight = offset;
+        CGFloat finalWidth = finalHeight * (4. /3);
+        self.imageView.viewSize = CGSizeMake(finalWidth, finalHeight);
+        self.imageView.centerX = self.view.centerX;
+    } else if (offsetY < defaultHeight ){
+        CGFloat finalHeight =  - offsetY;
+        if (finalHeight > 0.) {
+            self.imageView.bottom = finalHeight;
+        }
+    }
+}
+
 
 - (void)motionBegan:(UIEventSubtype)motion withEvent:(UIEvent *)event{
     ZLPhotoActionSheet *actionSheet = [[ZLPhotoActionSheet alloc] init];
@@ -110,13 +161,15 @@ static NSString *CellID = @"CellID";
             [models addObject:urlImage];
         }];
         
-        FYPhotoBrowseViewController *browseVC = [FYPhotoBrowseViewController new];
-        [self presentViewController:browseVC animated:YES completion:^{
-            browseVC.imageModels = models;
-        }];
+//        FYPhotoBrowseViewController *browseVC = [FYPhotoBrowseViewController new];
+//        [self presentViewController:browseVC animated:YES completion:^{
+//            browseVC.imageModels = models;
+//        }];
         
-//        // begin upload
-//        _uploader = [[FYImageUploader alloc] initWithImageModels:models];
+        // begin upload
+        _uploader = [[FYImageUploader alloc] initWithImageModels:models];
+        [self.tableView reloadData];
+
 //        [_uploader startWithCallBack:^(FYImageUploader *uploader) {
 //            [uploader.uploadingImages enumerateObjectsUsingBlock:^(FYImageModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
 //                dispatch_async(dispatch_get_main_queue(), ^{
